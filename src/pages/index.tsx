@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { Check, Plus, ChevronLeft, ChevronRight, Send } from "lucide-react";
+import {
+  Check,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  Expand,
+  Minimize2,
+} from "lucide-react";
 import { useLLMStore, LLMConfig } from "@/hooks/use-llm-store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -12,6 +20,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { StreamResponse, streamToModels } from "@/utils/llm";
 
 interface ModelSelection {
   [configId: string]: {
@@ -25,6 +35,20 @@ export default function Home() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const defaultAccordionValues = configs.map((config) => config.id);
   const [input, setInput] = useState("");
+  const [isPromptExpanded, setIsPromptExpanded] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState("");
+  const [responses, setResponses] = useState<{
+    [key: string]: {
+      content: string;
+      error?: string;
+      usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+      };
+    };
+  }>({});
+  const [isStreaming, setIsStreaming] = useState(false);
 
   console.log("Configs:", configs);
 
@@ -67,6 +91,44 @@ export default function Home() {
 
   console.log("Selected Models:", selectedModels);
 
+  const handleSend = async () => {
+    if (!input.trim() || isStreaming) return;
+
+    setIsStreaming(true);
+    setResponses({});
+
+    try {
+      await streamToModels(
+        configs,
+        selectedModels,
+        systemPrompt,
+        input,
+        (response: StreamResponse) => {
+          setResponses((prev) => {
+            const key = `${response.configId}|${response.modelId}`;
+            const existing = prev[key]?.content || "";
+            const existingUsage = prev[key]?.usage;
+
+            return {
+              ...prev,
+              [key]: {
+                content: response.error
+                  ? response.error
+                  : existing + response.content,
+                error: response.error,
+                usage: response.usage || existingUsage,
+              },
+            };
+          });
+        }
+      );
+    } catch (error) {
+      console.error("Streaming error:", error);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
   if (configs.length === 0) {
     return (
       <div className="p-6">
@@ -91,28 +153,56 @@ export default function Home() {
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-auto p-6">
           <h1 className="text-2xl font-bold mb-6">Playground</h1>
-          {/* Chat messages will go here */}
+
+          {/* Display responses */}
+          <div className="space-y-4">
+            {Object.entries(responses).map(([key, response]) => {
+              const [configId, modelId] = key.split("|");
+              // console.log("key --- :", { key, configs, configId, modelId });
+              const config = configs.find((c) => c.id === configId);
+              const model = config?.models.find((m) => m.id === modelId);
+
+              return (
+                <div
+                  key={key}
+                  className={cn(
+                    "p-4 rounded-lg border",
+                    response.error && "border-destructive"
+                  )}
+                >
+                  <div className="text-xs mb-2 text-blue-500">
+                    {config?.provider} - {model?.name}
+                  </div>
+                  <div className="whitespace-pre-wrap">{response.content}</div>
+                  {response.usage && (
+                    <div className="mt-2 text-xs text-muted-foreground border-t pt-2">
+                      Tokens: {response.usage.promptTokens} prompt +{" "}
+                      {response.usage.completionTokens} completion ={" "}
+                      {response.usage.totalTokens} total
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="border-t p-4 bg-background">
-          <div className="w-[80%] mx-auto flex gap-4">
+          <div className="w-full flex gap-4">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
               className="flex-1"
+              disabled={isStreaming}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  // Handle send
+                  handleSend();
                 }
               }}
             />
-            <Button
-              onClick={() => {
-                // Handle send
-              }}
-            >
+            <Button onClick={handleSend} disabled={isStreaming}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
@@ -125,7 +215,7 @@ export default function Home() {
           isCollapsed ? "w-[50px]" : "w-[350px]"
         )}
       >
-        <div className="relative h-full">
+        <div className="relative h-full flex flex-col">
           <Button
             variant="ghost"
             size="icon"
@@ -141,7 +231,39 @@ export default function Home() {
 
           <div
             className={cn(
-              "h-full overflow-auto p-6",
+              "border-t p-4",
+              isCollapsed && "invisible",
+              isPromptExpanded ? "h-[50vh]" : "h-[200px]"
+            )}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold mb-4">System Prompt</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setIsPromptExpanded(!isPromptExpanded)}
+              >
+                {isPromptExpanded ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Expand className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <Textarea
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              placeholder="Enter system prompt..."
+              className={cn(
+                "resize-none h-full",
+                isPromptExpanded ? "h-[calc(50vh-60px)]" : "h-[140px]"
+              )}
+            />
+          </div>
+          <div
+            className={cn(
+              "flex-1 overflow-auto p-6",
               isCollapsed && "invisible"
             )}
           >
