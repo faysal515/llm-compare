@@ -12,6 +12,8 @@
     "@ai-sdk/azure": "^1.1.11",
     "@ai-sdk/deepseek": "^0.1.10",
     "@ai-sdk/openai": "^1.1.11",
+    "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-checkbox": "^1.1.4",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-select": "^2.1.6",

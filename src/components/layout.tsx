@@ -13,7 +13,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen w-full">
       <Sidebar>
         <SidebarContent>
           <SidebarMenu className="p-2">
