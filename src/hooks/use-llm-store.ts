@@ -6,6 +6,8 @@ export interface LLMModel {
   id: string;
   name: string; // e.g., "gpt-4", "mixtral-8x7b", etc.
   deploymentId?: string; // Specifically for Azure OpenAI deployments
+  inputTokenPrice: number;
+  outputTokenPrice: number;
 }
 
 export interface LLMConfig {

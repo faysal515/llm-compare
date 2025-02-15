@@ -39,6 +39,8 @@ export default function Settings() {
     models: [] as LLMModel[],
   });
   const [modelName, setModelName] = useState("");
+  const [inputPrice, setInputPrice] = useState("0");
+  const [outputPrice, setOutputPrice] = useState("0");
   const [isTestingModel, setIsTestingModel] = useState(false);
   const [testResult, setTestResult] = useState<{
     success: boolean;
@@ -70,6 +72,8 @@ export default function Settings() {
     const newModel: LLMModel = {
       id: crypto.randomUUID(),
       name: modelName,
+      inputTokenPrice: parseFloat(inputPrice),
+      outputTokenPrice: parseFloat(outputPrice),
     };
 
     updateConfig(configId, {
@@ -78,6 +82,8 @@ export default function Settings() {
     });
 
     setModelName("");
+    setInputPrice("0");
+    setOutputPrice("0");
     setModelDialogOpen(null);
   };
 
@@ -271,6 +277,7 @@ export default function Settings() {
                       key={model.id}
                       variant="secondary"
                       className="flex items-center gap-1"
+                      title={`Input: $${model.inputTokenPrice}/1k tokens\nOutput: $${model.outputTokenPrice}/1k tokens`}
                     >
                       {model.name}
                       <button
@@ -315,6 +322,36 @@ export default function Settings() {
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
                 placeholder="model name/ deployment name if using azure openai"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="inputPrice">
+                Input Token Price (USD per 1M tokens)
+              </Label>
+              <Input
+                id="inputPrice"
+                type="number"
+                min="0"
+                step="0.000001"
+                value={inputPrice}
+                onChange={(e) => setInputPrice(e.target.value)}
+                placeholder="0.0001"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="outputPrice">
+                Output Token Price (USD per 1M tokens)
+              </Label>
+              <Input
+                id="outputPrice"
+                type="number"
+                min="0"
+                step="0.000001"
+                value={outputPrice}
+                onChange={(e) => setOutputPrice(e.target.value)}
+                placeholder="0.0002"
                 required
               />
             </div>

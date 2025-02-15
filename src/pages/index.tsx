@@ -36,7 +36,9 @@ export default function Home() {
   const defaultAccordionValues = configs.map((config) => config.id);
   const [input, setInput] = useState("");
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
-  const [systemPrompt, setSystemPrompt] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState(
+    "You're a helpful assistant."
+  );
   const [responses, setResponses] = useState<{
     [key: string]: {
       content: string;
@@ -49,6 +51,8 @@ export default function Home() {
     };
   }>({});
   const [isStreaming, setIsStreaming] = useState(false);
+  const [calculationMultiplier, setCalculationMultiplier] = useState<number>(1);
+  const [isInputExpanded, setIsInputExpanded] = useState(false);
 
   console.log("Configs:", configs);
 
@@ -126,6 +130,7 @@ export default function Home() {
       console.error("Streaming error:", error);
     } finally {
       setIsStreaming(false);
+      setInput("");
     }
   };
 
@@ -158,9 +163,19 @@ export default function Home() {
           <div className="space-y-4">
             {Object.entries(responses).map(([key, response]) => {
               const [configId, modelId] = key.split("|");
-              // console.log("key --- :", { key, configs, configId, modelId });
               const config = configs.find((c) => c.id === configId);
               const model = config?.models.find((m) => m.id === modelId);
+
+              // Calculate costs if usage exists
+              const cost =
+                response.usage && model
+                  ? (
+                      response.usage.promptTokens *
+                        (model.inputTokenPrice / 1_000_000) +
+                      response.usage.completionTokens *
+                        (model.outputTokenPrice / 1_000_000)
+                    ).toFixed(6)
+                  : null;
 
               return (
                 <div
@@ -179,6 +194,22 @@ export default function Home() {
                       Tokens: {response.usage.promptTokens} prompt +{" "}
                       {response.usage.completionTokens} completion ={" "}
                       {response.usage.totalTokens} total
+                      {cost && (
+                        <>
+                          <span className="ml-2 text-green-500 font-bold">
+                            (Cost: ${cost})
+                          </span>
+                          {calculationMultiplier > 1 && (
+                            <span className="ml-2 text-green-500 font-bold">
+                              ($
+                              {(Number(cost) * calculationMultiplier).toFixed(
+                                6
+                              )}{" "}
+                              for {calculationMultiplier} calls)
+                            </span>
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -188,23 +219,47 @@ export default function Home() {
         </div>
 
         <div className="border-t p-4 bg-background">
-          <div className="w-full flex gap-4">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1"
-              disabled={isStreaming}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-            />
-            <Button onClick={handleSend} disabled={isStreaming}>
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="w-full flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Message</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setIsInputExpanded(!isInputExpanded)}
+              >
+                {isInputExpanded ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Expand className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <div className="w-full flex gap-4">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
+                className={cn(
+                  "flex-1 resize-none",
+                  isInputExpanded ? "h-[200px]" : "h-[80px]"
+                )}
+                disabled={isStreaming}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+              />
+              <Button onClick={handleSend} disabled={isStreaming}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Press {navigator.platform.includes("Mac") ? "⌘" : "Ctrl"} + Enter
+              to send
+            </div>
           </div>
         </div>
       </div>
@@ -321,6 +376,25 @@ export default function Home() {
                   </AccordionItem>
                 ))}
               </Accordion>
+            </div>
+          </div>
+          <div className={cn("border-t p-4", isCollapsed && "invisible")}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Calculate</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min="1"
+                max="999999"
+                value={calculationMultiplier}
+                onChange={(e) =>
+                  setCalculationMultiplier(Number(e.target.value))
+                }
+                className="w-32"
+                placeholder="API calls"
+              />
+              <span className="text-sm text-muted-foreground">API calls</span>
             </div>
           </div>
         </div>
