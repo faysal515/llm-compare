@@ -54,7 +54,15 @@ export default function Settings() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addConfig(formData);
+    const finalBaseUrl =
+      formData.provider === "azure-openai"
+        ? `${formData.baseUrl.replace(/\/$/, "")}/openai/deployments`
+        : formData.baseUrl;
+
+    addConfig({
+      ...formData,
+      baseUrl: finalBaseUrl,
+    });
     setOpen(false);
     setFormData({
       provider: "" as LLMProvider,
@@ -141,9 +149,14 @@ export default function Settings() {
     e.preventDefault();
     if (!editingConfig) return;
 
+    const finalBaseUrl =
+      editingConfig.provider === "azure-openai"
+        ? `${editFormData.baseUrl.replace(/\/$/, "")}/openai/deployments`
+        : editFormData.baseUrl;
+
     updateConfig(editingConfig.id, {
       ...editingConfig,
-      baseUrl: editFormData.baseUrl,
+      baseUrl: finalBaseUrl,
       apiKey: editFormData.apiKey,
     });
     setEditingConfig(null);
@@ -204,15 +217,22 @@ export default function Settings() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="baseUrl">Base URL</Label>
-              <Input
-                id="baseUrl"
-                value={formData.baseUrl}
-                onChange={(e) =>
-                  setFormData({ ...formData, baseUrl: e.target.value })
-                }
-                placeholder="https://api.example.com"
-                required
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="baseUrl"
+                  value={formData.baseUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, baseUrl: e.target.value })
+                  }
+                  placeholder="https://api.example.com"
+                  required
+                />
+                {formData.provider === "azure-openai" && (
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    /openai/deployments
+                  </span>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="apiKey">API Key</Label>
@@ -400,15 +420,25 @@ export default function Settings() {
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="editBaseUrl">Base URL</Label>
-              <Input
-                id="editBaseUrl"
-                value={editFormData.baseUrl}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, baseUrl: e.target.value })
-                }
-                placeholder="https://api.example.com"
-                required
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="editBaseUrl"
+                  value={editFormData.baseUrl}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      baseUrl: e.target.value,
+                    })
+                  }
+                  placeholder="https://api.example.com"
+                  required
+                />
+                {editingConfig?.provider === "azure-openai" && (
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    /openai/deployments
+                  </span>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="editApiKey">API Key</Label>
