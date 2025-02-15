@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { StreamResponse, streamToModels } from "@/utils/llm";
+import ReactMarkdown from "react-markdown";
 
 interface ModelSelection {
   [configId: string]: {
@@ -190,11 +191,15 @@ export default function Home() {
                   </div>
                   <div
                     className={cn(
-                      "whitespace-pre-wrap",
+                      "prose dark:prose-invert max-w-none",
                       response.error ? "text-red-500" : ""
                     )}
                   >
-                    {response.error || response.content}
+                    {response.error ? (
+                      response.error
+                    ) : (
+                      <ReactMarkdown>{response.content}</ReactMarkdown>
+                    )}
                   </div>
                   {response.usage && (
                     <div className="mt-2 text-xs text-muted-foreground border-t pt-2">

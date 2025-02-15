@@ -16,6 +16,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen w-full">
       <Sidebar>
         <SidebarContent>
+          <div className="p-2">
+            <div className="text-lg font-bold text-gray-800">LLM Compare</div>
+            <div className="h-px bg-gray-200 my-2"></div>
+          </div>
           <SidebarMenu className="p-2">
             <SidebarMenuItem className="mb-1">
               <SidebarMenuButton
@@ -38,6 +42,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
+          <div className="mt-auto p-2">
+            <div className="text-xs text-center">
+              <div className="text-gray-500">Made by Cursor</div>
+              <div>
+                <a
+                  href="https://github.com/faysal515"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-800 font-bold underline"
+                >
+                  Prompted by Faysal Ahmed
+                </a>
+              </div>
+            </div>
+          </div>
         </SidebarContent>
       </Sidebar>
       <div className="flex flex-1 flex-col">
