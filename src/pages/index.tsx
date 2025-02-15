@@ -182,13 +182,20 @@ export default function Home() {
                   key={key}
                   className={cn(
                     "p-4 rounded-lg border",
-                    response.error && "border-destructive"
+                    response.error ? "border-destructive" : ""
                   )}
                 >
                   <div className="text-xs mb-2 text-blue-500">
                     {config?.provider} - {model?.name}
                   </div>
-                  <div className="whitespace-pre-wrap">{response.content}</div>
+                  <div
+                    className={cn(
+                      "whitespace-pre-wrap",
+                      response.error ? "text-red-500" : ""
+                    )}
+                  >
+                    {response.error || response.content}
+                  </div>
                   {response.usage && (
                     <div className="mt-2 text-xs text-muted-foreground border-t pt-2">
                       Tokens: {response.usage.promptTokens} prompt +{" "}

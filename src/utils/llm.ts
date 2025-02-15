@@ -135,7 +135,7 @@ async function streamToModel(
       throw new Error(`Unsupported provider: ${config.provider}`);
   }
 
-  const { textStream, usage } = await streamText({
+  const { textStream } = await streamText({
     model: client(model.name),
     messages: [
       {
@@ -147,10 +147,22 @@ async function streamToModel(
         content: userPrompt,
       },
     ],
+    onError: (error: any) => {
+      console.log("Error CB:", error);
+      const errorMessage =
+        error?.error?.data?.error?.message ||
+        error.message ||
+        "An error occurred during streaming";
+      onToken({
+        configId: config.id,
+        modelId,
+        content: "",
+        error: errorMessage,
+      });
+    },
     onFinish: ({ finishReason, usage }) => {
       console.log("Finish reason:", finishReason);
       console.log("Token usage:", usage);
-      // Send final update with usage information
       onToken({
         configId: config.id,
         modelId,
@@ -160,11 +172,25 @@ async function streamToModel(
     },
   });
 
-  for await (const chunk of textStream) {
+  try {
+    for await (const chunk of textStream) {
+      onToken({
+        configId: config.id,
+        modelId,
+        content: chunk,
+      });
+    }
+  } catch (error: any) {
+    console.log("Error CATCH:", error);
+    const errorMessage =
+      error.data?.error?.message ||
+      error.message ||
+      "An error occurred during streaming";
     onToken({
       configId: config.id,
       modelId,
-      content: chunk,
+      content: "",
+      error: errorMessage,
     });
   }
 }
