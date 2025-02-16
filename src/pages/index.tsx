@@ -49,6 +49,10 @@ export default function Home() {
         completionTokens: number;
         totalTokens: number;
       };
+      duration?: {
+        firstToken?: number;
+        total: number;
+      };
     };
   }>({});
   const [isStreaming, setIsStreaming] = useState(false);
@@ -122,6 +126,7 @@ export default function Home() {
                   : existing + response.content,
                 error: response.error,
                 usage: response.usage || existingUsage,
+                duration: response.duration,
               },
             };
           });
@@ -203,25 +208,44 @@ export default function Home() {
                   </div>
                   {response.usage && (
                     <div className="mt-2 text-xs text-muted-foreground border-t pt-2">
-                      Tokens: {response.usage.promptTokens} prompt +{" "}
-                      {response.usage.completionTokens} completion ={" "}
-                      {response.usage.totalTokens} total
-                      {cost && (
-                        <>
-                          <span className="ml-2 text-green-500 font-bold">
-                            (Cost: ${cost})
-                          </span>
-                          {calculationMultiplier > 1 && (
-                            <span className="ml-2 text-green-500 font-bold">
-                              ($
-                              {(Number(cost) * calculationMultiplier).toFixed(
-                                6
-                              )}{" "}
-                              for {calculationMultiplier} calls)
+                      <div className="flex flex-col space-y-1">
+                        {response.duration && (
+                          <div className="flex justify-between">
+                            <span>Latency:</span>
+                            <span>
+                              First token:{" "}
+                              {response.duration.firstToken?.toFixed(2)}s,
+                              Total: {response.duration.total.toFixed(2)}s
                             </span>
-                          )}
-                        </>
-                      )}
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span>Token Usage:</span>
+                          <span>
+                            {response.usage.promptTokens} prompt +{" "}
+                            {response.usage.completionTokens} completion ={" "}
+                            {response.usage.totalTokens} total
+                          </span>
+                        </div>
+                        {cost && (
+                          <div className="flex justify-between">
+                            <span>Cost:</span>
+                            <span className="text-green-700 font-bold">
+                              ${cost}
+                              {calculationMultiplier > 1 && (
+                                <span>
+                                  {" "}
+                                  ($
+                                  {(
+                                    Number(cost) * calculationMultiplier
+                                  ).toFixed(6)}{" "}
+                                  for {calculationMultiplier} calls)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

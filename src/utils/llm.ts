@@ -63,6 +63,10 @@ export type StreamResponse = {
     completionTokens: number;
     totalTokens: number;
   };
+  duration?: {
+    total: number;
+    firstToken: number | null;
+  };
 };
 
 export async function streamToModels(
@@ -97,6 +101,11 @@ export async function streamToModels(
 
   // Run all model calls in parallel
   await Promise.all(modelCalls);
+}
+
+// Add this helper function
+function getSecondsSince(startTime: number): number {
+  return (Date.now() - startTime) / 1000;
 }
 
 async function streamToModel(
@@ -135,6 +144,9 @@ async function streamToModel(
       throw new Error(`Unsupported provider: ${config.provider}`);
   }
 
+  const streamStart = Date.now();
+  let firstTokenTime: number | null = null;
+
   const { textStream } = await streamText({
     model: client(model.name),
     messages: [
@@ -162,18 +174,31 @@ async function streamToModel(
     },
     onFinish: ({ finishReason, usage }) => {
       console.log("Finish reason:", finishReason);
-      console.log("Token usage:", usage);
+
+      const totalDuration = getSecondsSince(streamStart);
+      const timeToFirstToken = firstTokenTime
+        ? (firstTokenTime - streamStart) / 1000
+        : null;
+
+      console.log("Token usage:", { usage, totalDuration, timeToFirstToken });
       onToken({
         configId: config.id,
         modelId,
         content: "",
         usage: usage,
+        duration: {
+          total: totalDuration,
+          firstToken: timeToFirstToken,
+        },
       });
     },
   });
 
   try {
     for await (const chunk of textStream) {
+      if (!firstTokenTime) {
+        firstTokenTime = Date.now();
+      }
       onToken({
         configId: config.id,
         modelId,
