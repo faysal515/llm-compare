@@ -24,6 +24,7 @@ export const LLM_PROVIDERS = [
   { value: "azure-openai", label: "Azure OpenAI" },
   { value: "groq", label: "Groq" },
   { value: "deepseek", label: "DeepSeek" },
+  { value: "openai", label: "OpenAI" },
 ] as const;
 
 const DB_NAME = "llm-config-db";
