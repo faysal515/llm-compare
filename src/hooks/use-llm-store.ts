@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type LLMProvider = "azure-openai" | "groq" | "deepseek";
+export type LLMProvider = "azure-openai" | "groq" | "deepseek" | "openai";
 
 export interface LLMModel {
   id: string;
