@@ -1,4 +1,4 @@
-import { generateText, streamText, TokenUsage } from "ai";
+import { generateText, streamText } from "ai";
 import { createAzure } from "@ai-sdk/azure";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGroq } from "@ai-sdk/groq";
@@ -95,7 +95,7 @@ export async function streamToModels(
   // Get all selected model configurations
   const modelCalls = configs.flatMap((config) => {
     return Object.entries(selectedModels[config.id] || {})
-      .filter(([_, isSelected]) => isSelected)
+      .filter(([, isSelected]) => isSelected)
       .map(([modelId]) => {
         return streamToModel(
           config,
@@ -189,6 +189,7 @@ async function streamToModel(
         content: userPrompt,
       },
     ],
+    // eslint-disable-next-line
     onError: (error: any) => {
       console.log("Error CB:", error);
       const errorMessage =
@@ -237,6 +238,7 @@ async function streamToModel(
         content: chunk,
       });
     }
+    // eslint-disable-next-line
   } catch (error: any) {
     console.log("Error CATCH:", error);
     const errorMessage =

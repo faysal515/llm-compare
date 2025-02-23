@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Check,
   Plus,
   ChevronLeft,
   ChevronRight,
@@ -50,7 +49,7 @@ export default function Home() {
         totalTokens: number;
       };
       duration?: {
-        firstToken?: number;
+        firstToken?: number | null;
         total: number;
       };
     };
